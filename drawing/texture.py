@@ -28,6 +28,7 @@ class Texture(object):
 
             self.width  = self.textureSurface.get_width()
             self.height = self.textureSurface.get_height()
+            self.size = Point(self.width,self.height)
 
             self.texture = glGenTextures(1)
             cache[filename] = (self.texture,self.width,self.height)
@@ -128,6 +129,9 @@ class TextureAtlas(object):
     def Subimage(self,name):
         name = '_'.join(name.split(os.path.sep))
         return self.subimages[name]
+
+    def SubimageSprite(self,name):
+        return self.Subimage(os.path.join(globals.dirs.sprites,name))
 
     def TransformCoord(self,subimage,value):
         value[0] = subimage.pos.x + value[0]*(float(subimage.size.x)/self.texture.width)
