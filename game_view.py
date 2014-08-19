@@ -7,7 +7,6 @@ import modes
 import random
 
 class Paddle(object):
-    
     def __init__(self,parent,pos):
         self.parent = parent
         self.size = parent.root.GetRelative(Point(10,20))
@@ -19,6 +18,20 @@ class Paddle(object):
                            colour=drawing.constants.colours.white,
                            buffer=globals.colour_tiles)
                            
+class Score(object):
+    def __init__(self,parent,pos,score):
+        self.score  = score
+        self.parent = parent
+        bl = pos-Point(0.03,0)
+        tr = pos+Point(0.03,0.1)
+        self.text   = ui.TextBox(parent = self.parent,
+                                 bl     = bl         ,
+                                 tr     = tr         ,
+                                 text   = '%d' % self.score ,
+                                 textType = drawing.texture.TextTypes.SCREEN_RELATIVE,
+                                 alignment = drawing.texture.TextAlignments.CENTRE,
+                                 colour = (1,1,1,1),
+                                 scale  = 5)
 
 class GameView(ui.RootElement):
     def __init__(self):
@@ -46,6 +59,8 @@ class GameView(ui.RootElement):
                                 
         self.player_paddle = Paddle(self.border,Point(0.05,0.5))
         self.enemy_paddle = Paddle(self.border,Point(0.95,0.5))
+        self.player_score = Score(self,Point(0.45,0.85),0)
+        self.enemy_score = Score(self,Point(0.55,0.85),0)
         self.angle = 0
     def StartMusic(self):
         pass
@@ -57,7 +72,7 @@ class GameView(ui.RootElement):
         #drawing.Scale(self.zoom,self.zoom,1)
         
         drawing.Translate(globals.screen.x/2,globals.screen.y/2,0)
-        drawing.Rotate(self.angle)
+        #drawing.Rotate(self.angle)
         drawing.Translate(-globals.screen.x/2,-globals.screen.y/2,0)
         drawing.LineWidth(2)
         drawing.DrawNoTexture(globals.line_buffer)
