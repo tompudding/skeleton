@@ -16,6 +16,7 @@ def Init():
     globals.ui_buffer             = drawing.QuadBuffer(131072)
     globals.nonstatic_text_buffer = drawing.QuadBuffer(131072)
     globals.colour_tiles          = drawing.QuadBuffer(131072)
+    globals.quad_buffer           = drawing.QuadBuffer(131072)
     globals.mouse_relative_buffer = drawing.QuadBuffer(1024)
     globals.line_buffer           = drawing.LineBuffer(16384)
     globals.tile_dimensions       = Point(16,16)*globals.tile_scale
@@ -47,10 +48,8 @@ def main():
         if t - last > 1000:
             #print 'FPS:',clock.get_fps()
             last = t
-        
-        #globals.current_time = t
 
-        globals.current_view.Update(t)
+        globals.current_view.Update()
         globals.current_view.Draw()
         globals.screen_root.Draw()
         globals.text_manager.Draw()
@@ -74,11 +73,12 @@ def main():
                 globals.current_view.KeyUp(event.key)
             else:
                 try:
-                    pos = Point(event.pos[0],globals.screen[1]-event.pos[1])
+                    pos = Point(event.pos[0]/globals.scale[0],globals.screen[1]-(event.pos[1]/globals.scale[1]))
                 except AttributeError:
                     continue
                 if event.type == pygame.MOUSEMOTION:
                     rel = Point(event.rel[0],-event.rel[1])
+                    #See if the top level UI wants to capture this motion (i.e they're dragging and element or some such
                     handled = globals.screen_root.MouseMotion(pos,rel,False)
                     if handled:
                         globals.current_view.CancelMouseMotion()
