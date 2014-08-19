@@ -35,7 +35,6 @@ class UIElementList:
         """Return the object at a given absolute position, or None if None exist"""
         match = [-1,None]
         for ui,height in self.items.iteritems():
-            print ui.absolute.bottom_left,height,pos
             if pos in ui and ui.Selectable():
                 if height > match[0]:
                     match = [height,ui]

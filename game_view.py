@@ -10,10 +10,12 @@ class Paddle(object):
     
     def __init__(self,parent,pos):
         self.parent = parent
-        self.size = parent.GetRelative(Point(5,20))
+        self.size = parent.root.GetRelative(Point(10,20))
+        bl = pos - self.size/2
+        tr = bl + self.size
         self.quad = ui.Box(parent=self.parent,
-                           pos=pos,
-                           tr=pos+self.size,
+                           pos=bl,
+                           tr=tr,
                            colour=drawing.constants.colours.white,
                            buffer=globals.colour_tiles)
                            
@@ -30,10 +32,10 @@ class GameView(ui.RootElement):
         self.mode = modes.Titles(self)
         #self.mode = modes.LevelOne(self)
         self.StartMusic()
-        self.player_paddle = Paddle(self,Point(0.2,0.2))
+        
         #self.border = drawing.QuadBorder(globals.colour_tiles,line_width = 1)
         w = 1/(math.sqrt(2))
-        border_size = Point(w,w)
+        border_size = Point(w*globals.screen.y/globals.screen.x,w)
         bl = Point(0.5,0.5)-(border_size/2)
         tr = bl + border_size
         self.border = ui.Border(parent=self,
@@ -42,6 +44,8 @@ class GameView(ui.RootElement):
                                 colour=drawing.constants.colours.white,
                                 buffer=globals.colour_tiles)
                                 
+        self.player_paddle = Paddle(self.border,Point(0.05,0.5))
+        self.enemy_paddle = Paddle(self.border,Point(0.95,0.5))
         self.angle = 0
     def StartMusic(self):
         pass
