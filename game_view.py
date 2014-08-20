@@ -13,7 +13,6 @@ class BoardObject(object):
         elapsed = globals.time - self.last_update
         self.last_update = globals.time
         distance = self.velocity*elapsed*0.03
-        print self.velocity,distance
         if distance:
             distance = self.FinalDistance(distance)
             if not distance:
@@ -55,6 +54,7 @@ class Ball(BoardObject):
         self.pos = Point(random.random()*0.2+0.4,random.random())
         self.velocity = Point(0.5+random.random()*0.5,0.5+random.random()*0.5)*0.03
         self.last_update = globals.time
+        self.in_paddle = False
         bl = self.pos - self.size/2
         tr = bl + self.size
         self.quad = ui.Box(parent=self.parent,
@@ -64,16 +64,27 @@ class Ball(BoardObject):
                            buffer=globals.colour_tiles)
 
     def FinalDistance(self,distance):
-        if self.quad.top_right.y > self.board_max:
+        centre = self.quad.bottom_left + self.quad.size/2
+
+        if self.in_paddle:
+            if not self.in_paddle.quad.ContainsRelative(centre):
+                self.in_paddle = None
+
+        if not self.in_paddle and self.parent.parent.player_paddle.quad.ContainsRelative(centre):
+            self.in_paddle = self.parent.parent.player_paddle
+            self.velocity.x *= -1
+            return
+
+        if centre.y > self.board_max:
             if distance.y > 0:
                 self.velocity.y *= -1
-        elif self.quad.bottom_left.y < self.board_min:
+        elif centre.y < self.board_min:
             if distance.y < 0:
                 self.velocity.y *= -1
-        if self.quad.top_right.x > self.board_max:
+        if centre.x > self.board_max:
             if distance.x > 0:
                 self.velocity.x *= -1
-        elif self.quad.bottom_left.x < self.board_min:
+        elif centre.x < self.board_min:
             if distance.x < 0:
                 self.velocity.x *= -1
 

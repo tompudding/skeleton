@@ -142,7 +142,13 @@ class UIElement(object):
         else:
             return
         del self.children[i]
-                
+
+    def ContainsRelative(self,pos):
+        if pos.x < self.bottom_left.x or pos.x >= self.top_right.x:
+            return False
+        if pos.y >= self.bottom_left.y and pos.y < self.top_right.y:
+            return True
+        return False
 
     def __contains__(self,pos):
         if pos.x < self.absolute.bottom_left.x or pos.x >= self.absolute.top_right.x:
