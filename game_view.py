@@ -10,15 +10,17 @@ class BoardObject(object):
     board_max = 0.98
     board_min = 0.02
     def Move(self):
-        elapsed = globals.time - self.last_update
-        self.last_update = globals.time
-        distance = self.velocity*elapsed*0.03
+        distance = self.velocity*self.elapsed*0.03
         if distance:
             distance = self.FinalDistance(distance)
             if not distance:
                 return
             self.pos += distance
             self.quad.Move(distance)
+
+    def Update(self):
+        self.elapsed = globals.time - self.last_update
+        self.last_update = globals.time
 
 class Paddle(BoardObject):
     def __init__(self,parent,pos):
@@ -45,14 +47,15 @@ class Paddle(BoardObject):
         return distance
         
     def Update(self):
+        super(Paddle,self).Update()
         self.Move()
 
 class Ball(BoardObject):
+    ball_reset_time = 2000
     def __init__(self,parent):
         self.parent = parent
         self.size = parent.root.GetRelative(Point(4,3))
-        self.pos = Point(random.random()*0.2+0.4,random.random())
-        self.velocity = Point(0.5+random.random()*0.5,0.5+random.random()*0.5)*0.03
+        self.SetRandomStart()
         self.last_update = globals.time
         self.in_paddle = False
         bl = self.pos - self.size/2
@@ -62,6 +65,7 @@ class Ball(BoardObject):
                            tr=tr,
                            colour=drawing.constants.colours.white,
                            buffer=globals.colour_tiles)
+        self.new_ball = None
 
     def FinalDistance(self,distance):
         centre = self.quad.bottom_left + self.quad.size/2
@@ -70,10 +74,16 @@ class Ball(BoardObject):
             if not self.in_paddle.quad.ContainsRelative(centre):
                 self.in_paddle = None
 
-        if not self.in_paddle and self.parent.parent.player_paddle.quad.ContainsRelative(centre):
-            self.in_paddle = self.parent.parent.player_paddle
-            self.velocity.x *= -1
-            return
+        for paddle in self.parent.parent.paddles:
+            if not self.in_paddle and paddle.quad.ContainsRelative(centre):
+                #We've colided with a paddle. make a note so we don't collide with it again until we're out
+                self.in_paddle = paddle
+                self.velocity.x *= -1
+                #where in the paddle did we hit? We go out a bit at the edges
+                #paddle_part = (paddle.quad.top_right.y-centre.y)/(paddle.quad.top_right.y-paddle.quad.bottom_left.y)
+                #edginess = 2*(paddle_part**4)-0.5
+                #self.velocity.y += (paddle.velocity.y*0.5)
+                return
 
         if centre.y > self.board_max:
             if distance.y > 0:
@@ -83,15 +93,37 @@ class Ball(BoardObject):
                 self.velocity.y *= -1
         if centre.x > self.board_max:
             if distance.x > 0:
-                self.velocity.x *= -1
+                globals.game_view.player_score.Increment()
+                self.quad.Disable()
+                self.new_ball = globals.time + self.ball_reset_time
         elif centre.x < self.board_min:
             if distance.x < 0:
-                self.velocity.x *= -1
+                globals.game_view.enemy_score.Increment()
+                self.quad.Disable()
+                self.new_ball = globals.time + self.ball_reset_time
 
         return distance
 
+    def SetRandomStart(self):
+        self.pos = Point(random.random()*0.2+0.4,random.random())
+        self.velocity = Point((0.5+random.random()*0.5),0.5+random.random()*0.5)*0.03
+        if random.random() > 0.5:
+            self.velocity.x *= -1
+        if random.random() > 0.5:
+            self.velocity.y *= -1
+
     def Update(self):
-        self.Move()
+        super(Ball,self).Update()
+        if self.new_ball:
+            if globals.time > self.new_ball:
+                self.SetRandomStart()
+                self.quad.SetPos(self.pos)
+                self.quad.Enable()
+                self.new_ball = None
+                print 'a',self.velocity
+        else:
+            print 'b',self.velocity
+            self.Move()
                            
 class Score(object):
     def __init__(self,parent,pos,score):
@@ -108,6 +140,10 @@ class Score(object):
                                  colour = (1,1,1,1),
                                  scale  = 5)
 
+    def Increment(self):
+        self.score += 1
+        self.text.SetText(text='%d' % self.score)
+
 class GameView(ui.RootElement):
     def __init__(self):
         self.atlas = globals.atlas = drawing.texture.TextureAtlas('tiles_atlas_0.png','tiles_atlas.txt')
@@ -123,6 +159,7 @@ class GameView(ui.RootElement):
         #self.mode = modes.LevelOne(self)
         self.last = globals.time
         self.objects = []
+        self.paddles = []
         self.StartMusic()
         
     def reset_board(self):
@@ -139,7 +176,8 @@ class GameView(ui.RootElement):
         self.player_paddle = Paddle(self.border,Point(0.05,0.5))
         self.enemy_paddle = Paddle(self.border,Point(0.95,0.5))
         self.ball = Ball(self.border)
-        self.objects = [self.player_paddle,self.enemy_paddle,self.ball]
+        self.paddles = [self.player_paddle,self.enemy_paddle]
+        self.objects = self.paddles + [self.ball]
         self.player_score = Score(self,Point(0.45,0.85),0)
         self.enemy_score = Score(self,Point(0.55,0.85),0)
         self.net = ui.DottedLine(parent=self.border,
@@ -149,6 +187,7 @@ class GameView(ui.RootElement):
                                  buffer=globals.colour_tiles)
         self.angle = 0
         self.rotate_speed = 0.5
+        self.have_board = True
 
     def StartMusic(self):
         pass
