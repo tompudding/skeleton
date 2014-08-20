@@ -121,10 +121,13 @@ class Ball(BoardObject):
     def SetRandomStart(self):
         self.pos = Point(random.random()*0.2+0.4,random.random())
         self.velocity = Point((0.5+random.random()*0.5),0.5+random.random()*0.5)*0.03
+
         if random.random() > 0.5:
             self.velocity.x *= -1
+            self.pos.x += 0.3
         if random.random() > 0.5:
             self.velocity.y *= -1
+            self.pos.x -= 0.3
 
     def Update(self):
         super(Ball,self).Update()
