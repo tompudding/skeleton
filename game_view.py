@@ -43,9 +43,13 @@ class GameView(ui.RootElement):
         self.grid = ui.Grid(self,Point(-1,-1),Point(2,2),Point(12,12))
         self.grid.Enable()
         self.mode = modes.Titles(self)
+        self.angle = 0
+        self.rotate_speed = 0
         #self.mode = modes.LevelOne(self)
+        self.last = globals.time
         self.StartMusic()
         
+    def reset_board(self):
         #self.border = drawing.QuadBorder(globals.colour_tiles,line_width = 1)
         w = 1/(math.sqrt(2))
         border_size = Point(w*globals.screen.y/globals.screen.x,w)
@@ -61,7 +65,13 @@ class GameView(ui.RootElement):
         self.enemy_paddle = Paddle(self.border,Point(0.95,0.5))
         self.player_score = Score(self,Point(0.45,0.85),0)
         self.enemy_score = Score(self,Point(0.55,0.85),0)
+        self.net = ui.DottedLine(parent=self.border,
+                                 pos=Point(0.49,-0.17),
+                                 tr=Point(0.51,1.2),
+                                 colour=drawing.constants.colours.white,
+                                 buffer=globals.colour_tiles)
         self.angle = 0
+        self.rotate_speed = 0.5
     def StartMusic(self):
         pass
         #pygame.mixer.music.play(-1)
@@ -72,7 +82,7 @@ class GameView(ui.RootElement):
         #drawing.Scale(self.zoom,self.zoom,1)
         
         drawing.Translate(globals.screen.x/2,globals.screen.y/2,0)
-        #drawing.Rotate(self.angle)
+        drawing.Rotate(self.angle)
         drawing.Translate(-globals.screen.x/2,-globals.screen.y/2,0)
         drawing.LineWidth(2)
         drawing.DrawNoTexture(globals.line_buffer)
@@ -91,7 +101,9 @@ class GameView(ui.RootElement):
         #drawing.DrawAll(globals.nonstatic_text_buffer,globals.text_manager.atlas.texture.texture)
         
     def Update(self):
-        self.angle = globals.time/100.
+        elapsed = globals.time-self.last
+        self.last = globals.time
+        self.angle += (elapsed*self.rotate_speed/100.0)
         if self.mode:
             self.mode.Update()
 

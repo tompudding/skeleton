@@ -501,6 +501,63 @@ class Border(UIElement):
         super(Border,self).MakeUnselectable()
         self.border.SetColour(self.unselectable_colour)
 
+class DottedLine(UIElement):
+    def __init__(self,parent,pos,tr,colour,buffer=globals.ui_buffer,level = None,num_segments=20):
+        super(DottedLine,self).__init__(parent,pos,tr)
+        self.quads = [drawing.Quad(buffer) for i in xrange(num_segments)]
+        self.colour = colour
+        self.SetColour(self.colour)
+        self.num_segments = num_segments
+        self.extra_level = 0 if level == None else level
+        self.SetPosition()
+        self.Enable()
+
+    def SetPosition(self):
+        for i,quad in enumerate(self.quads):
+            segment_size = float(self.absolute.size.y)/self.num_segments
+            bl = self.absolute.bottom_left + Point(0,i*segment_size)
+            tr = bl + Point(self.absolute.size.x,segment_size/2)
+            quad.SetVertices(bl,
+                             tr,
+                             self.level + self.extra_level)
+
+    def UpdatePosition(self):
+        super(DottedLine,self).UpdatePosition()
+        self.SetPosition()
+
+    def Delete(self):
+        super(DottedLine,self).Delete()
+        for quad in self.quads:
+            quad.Delete()
+        
+    def Disable(self):
+        if self.enabled:
+            for quad in self.quads:
+                quad.Disable()
+        super(DottedLine,self).Disable()
+        
+
+    def Enable(self):
+        if not self.enabled:
+            for quad in self.quads:
+                quad.Enable()
+        super(DottedLine,self).Enable()
+
+    def SetColour(self,colour):
+        self.colour = colour
+        for quad in self.quads:
+            quad.SetColour(self.colour)
+
+    def MakeSelectable(self):
+        super(DottedLine,self).MakeSelectable()
+        for quad in self.quads:
+            quad.SetColour(self.colour)
+
+    def MakeUnselectable(self):
+        super(DottedLine,self).MakeUnselectable()
+        for quad in self.quads:
+            quad.SetColour(self.unselectable_colour)
+
 
 class Grid(UIElement):
     """spacing is absolute"""
