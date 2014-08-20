@@ -50,6 +50,19 @@ class Paddle(BoardObject):
         super(Paddle,self).Update()
         self.Move()
 
+class EnemyPaddle(Paddle):
+    min_speed = 0.005
+    def Update(self):
+        super(Paddle,self).Update()
+        self.centre = self.quad.bottom_left + self.quad.size/2
+        diff = globals.game_view.ball.centre.y - self.centre.y
+        direction = 1 if diff > 0 else -1
+        self.velocity = Point(0,(diff**1)*0.1)
+        if abs(self.velocity.y) < self.min_speed:
+            self.velocity.y = direction*self.min_speed
+        print diff
+        self.Move()
+
 class Ball(BoardObject):
     ball_reset_time = 2000
     def __init__(self,parent):
@@ -65,17 +78,18 @@ class Ball(BoardObject):
                            tr=tr,
                            colour=drawing.constants.colours.white,
                            buffer=globals.colour_tiles)
+        self.centre = self.quad.bottom_left + self.quad.size/2
         self.new_ball = None
 
     def FinalDistance(self,distance):
-        centre = self.quad.bottom_left + self.quad.size/2
+        self.centre = self.quad.bottom_left + self.quad.size/2
 
         if self.in_paddle:
-            if not self.in_paddle.quad.ContainsRelative(centre):
+            if not self.in_paddle.quad.ContainsRelative(self.centre):
                 self.in_paddle = None
 
         for paddle in self.parent.parent.paddles:
-            if not self.in_paddle and paddle.quad.ContainsRelative(centre):
+            if not self.in_paddle and paddle.quad.ContainsRelative(self.centre):
                 #We've colided with a paddle. make a note so we don't collide with it again until we're out
                 self.in_paddle = paddle
                 self.velocity.x *= -1
@@ -85,18 +99,18 @@ class Ball(BoardObject):
                 #self.velocity.y += (paddle.velocity.y*0.5)
                 return
 
-        if centre.y > self.board_max:
+        if self.centre.y > self.board_max:
             if distance.y > 0:
                 self.velocity.y *= -1
-        elif centre.y < self.board_min:
+        elif self.centre.y < self.board_min:
             if distance.y < 0:
                 self.velocity.y *= -1
-        if centre.x > self.board_max:
+        if self.centre.x > self.board_max:
             if distance.x > 0:
                 globals.game_view.player_score.Increment()
                 self.quad.Disable()
                 self.new_ball = globals.time + self.ball_reset_time
-        elif centre.x < self.board_min:
+        elif self.centre.x < self.board_min:
             if distance.x < 0:
                 globals.game_view.enemy_score.Increment()
                 self.quad.Disable()
@@ -143,6 +157,7 @@ class Score(object):
     def Increment(self):
         self.score += 1
         self.text.SetText(text='%d' % self.score)
+        self.parent.OnScoreUpdate()
 
 class GameView(ui.RootElement):
     def __init__(self):
@@ -174,7 +189,7 @@ class GameView(ui.RootElement):
                                 buffer=globals.colour_tiles)
                                 
         self.player_paddle = Paddle(self.border,Point(0.05,0.5))
-        self.enemy_paddle = Paddle(self.border,Point(0.95,0.5))
+        self.enemy_paddle = EnemyPaddle(self.border,Point(0.95,0.5))
         self.ball = Ball(self.border)
         self.paddles = [self.player_paddle,self.enemy_paddle]
         self.objects = self.paddles + [self.ball]
@@ -188,6 +203,14 @@ class GameView(ui.RootElement):
         self.angle = 0
         self.rotate_speed = 0.5
         self.have_board = True
+        self.OnScoreUpdate()
+
+    def OnScoreUpdate(self):
+        if self.player_score.score <= self.enemy_score.score:
+            self.rotate_speed = 0.5
+            return
+        diff = self.player_score.score - self.enemy_score.score
+        self.rotate_speed = diff**2
 
     def StartMusic(self):
         pass
