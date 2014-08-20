@@ -86,6 +86,14 @@ class UIElement(object):
         self.top_right            = tr
         self.size                 = tr - pos
 
+    def SetPos(self,pos):
+        self.bottom_left = pos
+        self.top_right = pos + self.size
+        self.UpdatePosition()
+
+    def Move(self,amount):
+        self.SetPos(self.bottom_left + amount)
+
     def SetPosAbsolute(self,pos):
         """Called by the user to update our position directly"""
         self.bottom_left = self.GetRelativeInParent(pos)

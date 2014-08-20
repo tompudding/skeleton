@@ -9,7 +9,11 @@ import random
 class Paddle(object):
     def __init__(self,parent,pos):
         self.parent = parent
-        self.size = parent.root.GetRelative(Point(10,20))
+        self.size = parent.root.GetRelative(Point(10,30))
+        self.direction = Point(0,0)
+        self.pos = pos
+        self.last_update = globals.time
+
         bl = pos - self.size/2
         tr = bl + self.size
         self.quad = ui.Box(parent=self.parent,
@@ -17,6 +21,22 @@ class Paddle(object):
                            tr=tr,
                            colour=drawing.constants.colours.white,
                            buffer=globals.colour_tiles)
+
+    def Move(self):
+        elapsed = globals.time - self.last_update
+        self.last_update = globals.time
+        distance = self.direction*elapsed*0.03
+        print self.direction,distance
+        if distance:
+            if distance.y > 0 and self.quad.top_right.y >= 0.98:
+                return
+            elif distance.y < 0 and self.quad.bottom_left.y <= 0.02:
+                return
+            self.pos += distance
+            self.quad.Move(distance)
+
+    def Update(self):
+        self.Move()
                            
 class Score(object):
     def __init__(self,parent,pos,score):
@@ -47,10 +67,10 @@ class GameView(ui.RootElement):
         self.rotate_speed = 0
         #self.mode = modes.LevelOne(self)
         self.last = globals.time
+        self.paddles = []
         self.StartMusic()
         
     def reset_board(self):
-        #self.border = drawing.QuadBorder(globals.colour_tiles,line_width = 1)
         w = 1/(math.sqrt(2))
         border_size = Point(w*globals.screen.y/globals.screen.x,w)
         bl = Point(0.5,0.5)-(border_size/2)
@@ -63,6 +83,7 @@ class GameView(ui.RootElement):
                                 
         self.player_paddle = Paddle(self.border,Point(0.05,0.5))
         self.enemy_paddle = Paddle(self.border,Point(0.95,0.5))
+        self.paddles = [self.player_paddle,self.enemy_paddle]
         self.player_score = Score(self,Point(0.45,0.85),0)
         self.enemy_score = Score(self,Point(0.55,0.85),0)
         self.net = ui.DottedLine(parent=self.border,
@@ -72,6 +93,7 @@ class GameView(ui.RootElement):
                                  buffer=globals.colour_tiles)
         self.angle = 0
         self.rotate_speed = 0.5
+
     def StartMusic(self):
         pass
         #pygame.mixer.music.play(-1)
@@ -109,6 +131,10 @@ class GameView(ui.RootElement):
 
         if self.game_over:
             return
+        
+        #frame_rate independent...
+        for paddle in self.paddles:
+            paddle.Update()
             
     def GameOver(self):
         self.game_over = True
