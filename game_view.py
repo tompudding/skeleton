@@ -6,11 +6,26 @@ from globals.types import Point
 import modes
 import random
 
-class Paddle(object):
+class BoardObject(object):
+    board_max = 0.98
+    board_min = 0.02
+    def Move(self):
+        elapsed = globals.time - self.last_update
+        self.last_update = globals.time
+        distance = self.velocity*elapsed*0.03
+        print self.velocity,distance
+        if distance:
+            distance = self.FinalDistance(distance)
+            if not distance:
+                return
+            self.pos += distance
+            self.quad.Move(distance)
+
+class Paddle(BoardObject):
     def __init__(self,parent,pos):
         self.parent = parent
         self.size = parent.root.GetRelative(Point(10,30))
-        self.direction = Point(0,0)
+        self.velocity = Point(0,0)
         self.pos = pos
         self.last_update = globals.time
 
@@ -22,18 +37,47 @@ class Paddle(object):
                            colour=drawing.constants.colours.white,
                            buffer=globals.colour_tiles)
 
-    def Move(self):
-        elapsed = globals.time - self.last_update
+    
+    def FinalDistance(self,distance):
+        if distance.y > 0 and self.quad.top_right.y >= self.board_max:
+            return 
+        elif distance.y < 0 and self.quad.bottom_left.y <= self.board_min:
+            return
+        return distance
+        
+    def Update(self):
+        self.Move()
+
+class Ball(BoardObject):
+    def __init__(self,parent):
+        self.parent = parent
+        self.size = parent.root.GetRelative(Point(4,3))
+        self.pos = Point(random.random()*0.2+0.4,random.random())
+        self.velocity = Point(0.5+random.random()*0.5,0.5+random.random()*0.5)*0.03
         self.last_update = globals.time
-        distance = self.direction*elapsed*0.03
-        print self.direction,distance
-        if distance:
-            if distance.y > 0 and self.quad.top_right.y >= 0.98:
-                return
-            elif distance.y < 0 and self.quad.bottom_left.y <= 0.02:
-                return
-            self.pos += distance
-            self.quad.Move(distance)
+        bl = self.pos - self.size/2
+        tr = bl + self.size
+        self.quad = ui.Box(parent=self.parent,
+                           pos=bl,
+                           tr=tr,
+                           colour=drawing.constants.colours.white,
+                           buffer=globals.colour_tiles)
+
+    def FinalDistance(self,distance):
+        if self.quad.top_right.y > self.board_max:
+            if distance.y > 0:
+                self.velocity.y *= -1
+        elif self.quad.bottom_left.y < self.board_min:
+            if distance.y < 0:
+                self.velocity.y *= -1
+        if self.quad.top_right.x > self.board_max:
+            if distance.x > 0:
+                self.velocity.x *= -1
+        elif self.quad.bottom_left.x < self.board_min:
+            if distance.x < 0:
+                self.velocity.x *= -1
+
+        return distance
 
     def Update(self):
         self.Move()
@@ -67,7 +111,7 @@ class GameView(ui.RootElement):
         self.rotate_speed = 0
         #self.mode = modes.LevelOne(self)
         self.last = globals.time
-        self.paddles = []
+        self.objects = []
         self.StartMusic()
         
     def reset_board(self):
@@ -83,7 +127,8 @@ class GameView(ui.RootElement):
                                 
         self.player_paddle = Paddle(self.border,Point(0.05,0.5))
         self.enemy_paddle = Paddle(self.border,Point(0.95,0.5))
-        self.paddles = [self.player_paddle,self.enemy_paddle]
+        self.ball = Ball(self.border)
+        self.objects = [self.player_paddle,self.enemy_paddle,self.ball]
         self.player_score = Score(self,Point(0.45,0.85),0)
         self.enemy_score = Score(self,Point(0.55,0.85),0)
         self.net = ui.DottedLine(parent=self.border,
@@ -133,7 +178,7 @@ class GameView(ui.RootElement):
             return
         
         #frame_rate independent...
-        for paddle in self.paddles:
+        for paddle in self.objects:
             paddle.Update()
             
     def GameOver(self):

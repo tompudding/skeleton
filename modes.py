@@ -112,9 +112,9 @@ class GameMode(Mode):
     def KeyDown(self,key):
         if key in self.direction_amounts:
             self.keydownmap |= self.keyflags[key]
-            self.parent.player_paddle.direction += self.direction_amounts[key]
+            self.parent.player_paddle.velocity += self.direction_amounts[key]
 
     def KeyUp(self,key):
         if key in self.direction_amounts and (self.keydownmap & self.keyflags[key]):
             self.keydownmap &= (~self.keyflags[key])
-            self.parent.player_paddle.direction -= self.direction_amounts[key]
+            self.parent.player_paddle.velocity -= self.direction_amounts[key]
