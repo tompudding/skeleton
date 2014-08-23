@@ -52,15 +52,17 @@ class Paddle(BoardObject):
 
 class EnemyPaddle(Paddle):
     min_speed = 0.005
+    max_speed = 0.1
     def Update(self):
         super(Paddle,self).Update()
         self.centre = self.quad.bottom_left + self.quad.size/2
         diff = globals.game_view.ball.centre.y - self.centre.y
         direction = 1 if diff > 0 else -1
-        self.velocity = Point(0,(diff**1)*0.1)
+        self.velocity = Point(0,(diff**1)*0.2)
         if abs(self.velocity.y) < self.min_speed:
             self.velocity.y = direction*self.min_speed
-        print diff
+        if abs(self.velocity.y) > self.max_speed:
+            self.velocity.y = direction*self.max_speed
         self.Move()
 
 class Ball(BoardObject):
