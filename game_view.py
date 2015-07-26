@@ -25,23 +25,25 @@ class GameView(ui.RootElement):
 
     def Draw(self):
         drawing.ResetState()
-        drawing.DrawNoTexture(globals.line_buffer)
-        drawing.DrawNoTexture(globals.colour_tiles)
-        drawing.DrawAll(globals.nonstatic_text_buffer,globals.text_manager.atlas.texture.texture)
-        
+        drawing.Translate(0,0,0)
+        #drawing.DrawNoTexture(globals.line_buffer)
+        #drawing.DrawNoTexture(globals.colour_tiles)
+        #drawing.DrawAll(globals.quad_buffer,self.atlas.texture)
+        drawing.DrawAll(globals.nonstatic_text_buffer,globals.text_manager.atlas.texture)
+
     def Update(self,t):
         if self.mode:
             self.mode.Update(t)
 
         if self.game_over:
             return
-            
+
         self.t = t
 
     def GameOver(self):
         self.game_over = True
         self.mode = modes.GameOver(self)
-        
+
     def KeyDown(self,key):
         self.mode.KeyDown(key)
 
